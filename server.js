@@ -1,6 +1,8 @@
 var helios = require('helios')
 var express = require('express')
 var bodyParser = require('body-parser');
+var ref = new Firebase("https://dinosaur-facts.firebaseio.com/dinosaurs");
+
 
 //Setup
 var app = express();
@@ -13,6 +15,20 @@ var solr_client = new helios.client({
   path: '/solr', // Insert your client solr path
   timeout: 1000 // Optional request timeout
 });
+
+
+app.post('/username',function(req,res){
+  console.log(req.body.username);
+  ref.equalTo(req.body.username).on("child_added", function(snapshot) {
+
+  });
+
+
+
+}
+
+
+
 
 
 //Routes
@@ -33,6 +49,7 @@ app.post('/', jsonParser, function(req, res) {
   console.log(req.body.username);
   var solrdoc = new helios.document();
   solrdoc.addField('id', req.body.username);
+  solrdoc.addField('title',req.body.username);
   solr_client.addDoc(solrdoc, true, function(err) {
     if (err) {
       console.log(err);
