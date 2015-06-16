@@ -1,72 +1,82 @@
-var helios = require('helios')
-var express = require('express')
-var bodyParser = require('body-parser');
-var ref = new Firebase("https://dinosaur-facts.firebaseio.com/dinosaurs");
+var express = require('express'),
+	mongodb = require('mongodb'),
+	bodyParser = require('body-parser'),
+	async = require('async'),
+	moment = require('moment'),
+	uuid = require('uuid'),
+  _=require('underscore')
 
-
-//Setup
-var app = express();
+var app = express()
 app.use(bodyParser.json())
 var jsonParser = bodyParser.json()
-var queryBuilder = new helios.queryBuilder();
-var solr_client = new helios.client({
-  host: '104.236.188.213', // Insert your client host
-  port: 8080,
-  path: '/solr', // Insert your client solr path
-  timeout: 1000 // Optional request timeout
-});
+var MongoClient = mongodb.MongoClient;
+var url = 'mongodb://localhost:27017/';
+
+app.get('/', function (req, res) {
+	res.send('Hello World!');
+})
+
+app.post('/user', function (req, res) {
+	console.log(req.body);
+	async.waterfall([
+			function (callback) {
+        console.log("connect Mongo")
+				MongoClient.connect(url, function (err, db) {
+					callback(err, db)
+				})
+			},
+			function (db, callback) {
+				console.log('find')
+				var collection = db.collection('login')
+				var query = {
+					"username": req.body.username
+				}
+
+				var cursor = collection.find(query);
+				cursor.sort({
+					timestamp: -1
+				});
+				cursor.limit(1);
+        cursor.skip(0);
+				var stuff;
+				cursor.toArray(function (err, doc) {
+					console.log("doc");
+					console.log(doc);
+					callback(err, doc, db, collection);
+				});
+			},
+			function (doc, db, collection, callback) {
+				if(_.isEmpty(doc)) {
+          req.body.timestamp = moment().unix()
+          req.body.session = uuid.v1();
+					collection.insert(req.body, function (err, result) {
+            db.close;
+						callback(null, result.ops[0])
+					})
+
+				} else {
+          callback(null,doc[0]);
+				}
+			}
+		],
+		function (err, result) {
+			res.send(result);
+		});
+
+})
 
 
-app.post('/username',function(req,res){
-  console.log(req.body.username);
-  ref.equalTo(req.body.username).on("child_added", function(snapshot) {
-
-  });
-
-
-
-}
 
 
 
 
 
-//Routes
-app.get('/', function(req, res) {
-  solr_client.select(queryBuilder.simpleQuery({
-    op: 'OR',
-    df: 'id',
-    q: '*'
-  }).toString(), function(err, r) {
-    if (err) console.log(err);
-    res.send(r); // yes, it returns in raw format, you need to JSON.parse it
-  });
 
-});
+var server = app.listen(3000, function () {
 
-app.post('/', jsonParser, function(req, res) {
-  // res.send( 'Got a POST request' );
-  console.log(req.body.username);
-  var solrdoc = new helios.document();
-  solrdoc.addField('id', req.body.username);
-  solrdoc.addField('title',req.body.username);
-  solr_client.addDoc(solrdoc, true, function(err) {
-    if (err) {
-      console.log(err);
-      res.send(err);
-    } else {
-      res.send('done');
-    }
-  });
+	var host = server.address().address;
+	var port = server.address().port;
 
-});
-
-
-var server = app.listen(3000, function() {
-
-  var host = server.address().address;
-  var port = server.address().port;
-
-  console.log('Example app listening at http://%s:%s', host, port);
+	console.log('Example app listening at http://%s:%s', host, port);
 
 });
