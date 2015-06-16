@@ -20,7 +20,7 @@ app.post('/user', function (req, res) {
 	console.log(req.body);
 	async.waterfall([
 			function (callback) {
-        console.log("connect Mongo")
+                console.log("connect Mongo")
 				MongoClient.connect(url, function (err, db) {
 					callback(err, db)
 				})
@@ -37,7 +37,7 @@ app.post('/user', function (req, res) {
 					timestamp: -1
 				});
 				cursor.limit(1);
-        cursor.skip(0);
+                cursor.skip(0);
 				var stuff;
 				cursor.toArray(function (err, doc) {
 					console.log("doc");
@@ -47,15 +47,15 @@ app.post('/user', function (req, res) {
 			},
 			function (doc, db, collection, callback) {
 				if(_.isEmpty(doc)) {
-          req.body.timestamp = moment().unix()
-          req.body.session = uuid.v1();
+                    req.body.timestamp = moment().unix()
+                    req.body.session = uuid.v1();
 					collection.insert(req.body, function (err, result) {
-            db.close;
+                    db.close;
 						callback(null, result.ops[0])
 					})
 
 				} else {
-          callback(null,doc[0]);
+                    callback(null,doc[0]);
 				}
 			}
 		],
