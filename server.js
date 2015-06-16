@@ -56,7 +56,7 @@ app.post('/user', function (req, res) {
 
 				} else {
 					//add logic for timestamp
-					if(moment().unix() - doc[0].timestamp > 60) {
+					if(moment().unix() - doc[0].timestamp > 60*60*24) {
 						req.body.timestamp = moment().unix()
 						req.body.session = uuid.v1();
 						collection.insert(req.body, function (err, result) {
