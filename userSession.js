@@ -35,7 +35,7 @@ app.post('/username', function (req, res) {
 			if(err)
 				res.send(err);
 			else if(item != null) {
-				if(req.body.timestamp - moment().unix() > moment().subtract(1, 'd').unix()) {
+				if(moment().unix()-req.body.timestamp > 60*24) {
 					//create user with new uuid and timestamp
 					req.body.timestamp = moment();
 					collection.insert(req.body, function (err, result) {
