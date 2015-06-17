@@ -13,10 +13,7 @@ var MongoClient = mongodb.MongoClient;
 var url = 'mongodb://localhost:27017/';
 
 app.get('/', function (req, res) {
-	connectToMongo("yo",function(err,doc,db,collection){
-    console.log("damn girl");
-    res.send('Hello World!');
-  })
+	res.send("yo mama so fat");
 
 })
 
@@ -57,30 +54,10 @@ app.post('/user', function (req, res) {
 	console.log(req.body);
 	async.waterfall([
 			function (callback) {
-				console.log("connect Mongo")
-				MongoClient.connect(url, function (err, db) {
-					callback(err, db)
-				})
-			},
-			function (db, callback) {
-				console.log('find')
-				var collection = db.collection('login')
-				var query = {
-					"username": req.body.username
-				}
-
-				var cursor = collection.find(query);
-				cursor.sort({
-					timestamp: -1
-				});
-				cursor.limit(1);
-				cursor.skip(0);
-				var stuff;
-				cursor.toArray(function (err, doc) {
-					console.log("doc");
-					console.log(doc);
-					callback(err, doc, db, collection);
-				});
+				connectToMongo(req.body.username,function(err,doc,db,collection){
+			    console.log("done");
+					callback(err,doc,db,collection)
+			  })
 			},
 			function (doc, db, collection, callback) {
 				if(_.isEmpty(doc)) {
