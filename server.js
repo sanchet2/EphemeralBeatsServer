@@ -13,8 +13,45 @@ var MongoClient = mongodb.MongoClient;
 var url = 'mongodb://localhost:27017/';
 
 app.get('/', function (req, res) {
-	res.send('Hello World!');
+	connectToMongo("yo",function(err,doc,db,collection){
+    console.log("damn girl");
+    res.send('Hello World!');
+  })
+
 })
+
+var connectToMongo = function (name, cb) {
+	async.waterfall([
+			function (callback) {
+				console.log("connect Mongo")
+				MongoClient.connect(url, function (err, db) {
+					callback(err, db)
+				})
+			},
+			function (db, callback) {
+				console.log('find')
+				var collection = db.collection('login')
+				var query = {
+					"username": name
+				}
+				var cursor = collection.find(query);
+				cursor.sort({
+					timestamp: -1
+				});
+				cursor.limit(1);
+				cursor.skip(0);
+				var stuff;
+				cursor.toArray(function (err, doc) {
+					console.log("doc");
+					console.log(doc);
+					callback(err, doc, db, collection);
+				});
+			}
+		],
+		function (err, doc, db, collection) {
+			cb(err, doc, db, collection);
+		})
+}
 
 app.post('/user', function (req, res) {
 	console.log(req.body);
@@ -56,7 +93,7 @@ app.post('/user', function (req, res) {
 
 				} else {
 					//add logic for timestamp
-					if(moment().unix() - doc[0].timestamp > 60*60*24) {
+					if(moment().unix() - doc[0].timestamp > 60 * 60 * 24) {
 						req.body.timestamp = moment().unix()
 						req.body.session = uuid.v1();
 						collection.insert(req.body, function (err, result) {
@@ -71,7 +108,7 @@ app.post('/user', function (req, res) {
 		],
 		function (err, result) {
 			if(err) {
-        console.log(err);
+				console.log(err);
 				res.status(403).send("duplicate")
 			} else {
 				res.send(result)
