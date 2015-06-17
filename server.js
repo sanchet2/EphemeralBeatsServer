@@ -17,7 +17,7 @@ app.get('/', function (req, res) {
 
 })
 
-var connectToMongo = function (name, cb) {
+var getCurrentUser = function (name, cb) {
 	async.waterfall([
 			function (callback) {
 				console.log("connect Mongo")
@@ -54,7 +54,7 @@ app.post('/user', function (req, res) {
 	console.log(req.body);
 	async.waterfall([
 			function (callback) {
-				connectToMongo(req.body.username,function(err,doc,db,collection){
+				getCurrentUser(req.body.username,function(err,doc,db,collection){
 			    console.log("done");
 					callback(err,doc,db,collection)
 			  })
@@ -70,7 +70,7 @@ app.post('/user', function (req, res) {
 
 				} else {
 					//add logic for timestamp
-					if(moment().unix() - doc[0].timestamp > 60 * 60 * 24) {
+					if(moment().unix() - doc[0].timestamp > 60 ) {
 						req.body.timestamp = moment().unix()
 						req.body.session = uuid.v1();
 						collection.insert(req.body, function (err, result) {
@@ -92,6 +92,31 @@ app.post('/user', function (req, res) {
 			}
 		});
 
+})
+
+app.post("/user/:user",function (req, res){
+	var username=req.params.user
+	var session=req.body.session
+	async.waterfall([
+		function (callback) {
+		getCurrentUser(username,function(err,doc,db,collection){
+			console.log("done");
+			callback(err,doc,db,collection)
+		})
+	},function(doc,db,collection,callback){
+		if(_.isEmpty(doc)==false){
+			if(doc[0].session==session && moment().unix()-doc[0].timestamp<60){
+				res.status(200).send({"status":"continue"})
+				db.close()
+			}
+			else {
+				res.status(403).send({"done":"failed"})
+				db.close()
+			}
+		}
+
+	}
+	])
 })
 
 
