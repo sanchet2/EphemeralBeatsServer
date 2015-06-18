@@ -127,7 +127,8 @@ app.get("/user/query/:user", function (req, res) {
 				match: {
 					username:{
 						query:name,
-						fuzziness:"2"
+						fuzziness:"2",
+						prefix_length:"1"
 					}
 				}
 			}
