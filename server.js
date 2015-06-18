@@ -125,7 +125,10 @@ app.get("/user/query/:user", function (req, res) {
 		body: {
 			query: {
 				match: {
-					username: name
+					username:{
+						query:name,
+						fuzziness:"2"
+					}
 				}
 			}
 		}
