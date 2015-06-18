@@ -121,7 +121,6 @@ app.get("/user/query/:user", function (req, res) {
 	client.search({
 		index: 'user',
 		type: 'document',
-		analyzeWildcard: true,
 		body: {
 			query: {
 				match: {
@@ -137,6 +136,7 @@ app.get("/user/query/:user", function (req, res) {
 		var hits = resp.hits.hits;
 		res.send(hits);
 	}, function (err) {
+		res.status(403).send("failed");
 		console.trace(err.message);
 	});
 
