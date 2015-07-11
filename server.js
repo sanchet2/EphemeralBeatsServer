@@ -7,6 +7,7 @@ var express = require('express'),
 	_ = require('underscore'),
 	elasticsearch = require('elasticsearch')
 
+
 var app = express()
 app.use(bodyParser.json())
 var jsonParser = bodyParser.json()
@@ -77,7 +78,7 @@ app.post('/user', function (req, res) {
 
 				} else {
 					//add logic for timestamp
-					if(moment().unix() - doc[0].timestamp > 60) {
+					if(moment().unix() - doc[0].timestamp > 60*24*24) {
 						req.body.timestamp = moment().unix()
 						req.body.session = uuid.v1();
 						collection.insert(req.body, function (err, result) {
@@ -130,11 +131,21 @@ app.get("/user/query/:user", function (req, res) {
 						prefix_length:"1"
 					}
 				}
+			},
+		filter:{
+			range:{
+				timestamp:{
+					gte:moment().subtract('1','days').unix()
+				}
 			}
 		}
+	}
 	}).then(function (resp) {
 		var hits = resp.hits.hits;
-		res.send(hits);
+		var better= _.map(hits,function(thing){
+			return thing._source;
+		})
+		res.send(better);
 	}, function (err) {
 		res.status(403).send("failed");
 		console.trace(err.message);
@@ -149,6 +160,8 @@ app.get("/user/query/:user", function (req, res) {
 app.post("/user/:user", function (req, res) {
 	var username = req.params.user
 	var session = req.body.session
+	console.log(username)
+	console.log(session)
 	async.waterfall([
 		function (callback) {
 			getCurrentUser(username, function (err, doc, db, collection) {
@@ -158,7 +171,10 @@ app.post("/user/:user", function (req, res) {
 		},
 		function (doc, db, collection, callback) {
 			if(_.isEmpty(doc) == false) {
-				if(doc[0].session == session && moment().unix() - doc[0].timestamp < 60) {
+				console.log(session)
+				console.log(doc[0].session)
+				console.log(moment().unix() - doc[0].timestamp);
+				if(doc[0].session == session && moment().unix() - doc[0].timestamp < 60*60*24) {
 					res.status(200).send({
 						"status": "continue"
 					})
@@ -174,7 +190,6 @@ app.post("/user/:user", function (req, res) {
 		}
 	])
 })
-2
 
 var server = app.listen(3000, function () {
 
